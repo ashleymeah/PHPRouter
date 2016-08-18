@@ -4,7 +4,7 @@ class baseApp
 {
 	protected $controller = "Page";
 	protected $method = "index";
-	protected $params = [];
+	protected $params;
 	
 	public function __construct()
 	{
@@ -13,6 +13,7 @@ class baseApp
 		{
 			$this->parseUrl($_GET["url"]);
 		}
+		else throw new Exception("mod_rewrite failed to route path to correct path");
 		
 		//Routing exit, prepare + invoke instance controller
 		$this->prepare_controller();
@@ -24,7 +25,7 @@ class baseApp
 		//ignore index.php from params
 		if($url == "index.php")
 		{
-			$url = "";
+			$url = "Page/index";
 		}
 		
 		//Split up url to array
@@ -52,7 +53,7 @@ class baseApp
 			{
 				$this->method = $this->params[1];
 				unset($this->params[1]);
-			}			
+			}		
 		}
 	}
 	
@@ -62,6 +63,13 @@ class baseApp
 		$this->params = $this->params ? array_values($this->params) : [];
 		
 		//All variables should have been valided at parse and prepare, invoke controller method.
-		call_user_func_array([$this->controller, $this->method], $this->params);
+		if(method_exists($this->controller, $this->method))
+		{
+			call_user_func_array([$this->controller, $this->method], $this->params);
+		}
+		else
+		{
+			echo "404 - Page not fount";
+		}
 	}
 }
