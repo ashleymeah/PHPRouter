@@ -1,21 +1,32 @@
 <?php
+/**
+ * PHPRouter
+ *
+ * @copyright Ashley Meah (http://ashley.meah.me.uk/)
+ * @license   The MIT License (MIT)
+ *
+ * This source file is subject to the The MIT License (MIT) License that is bundled
+ * with this source code in the file LICENSE.md
+ */
 
 class baseApp
 {
-	protected $controller = "Page";
-	protected $method = "index";
+	protected $controller;
+	protected $method;
 	protected $params;
 	
 	public function __construct()
 	{
-		//Routing entrance
+		//Route controller
 		if(isset($_GET["url"]))
 		{
 			$this->parseUrl($_GET["url"]);
-		}
-		else throw new Exception("mod_rewrite failed to route path to correct path");
+		}		
 		
-		//Routing exit, prepare + invoke instance controller
+		if($this->controller == "")
+			header("Location: " . "Page/error_404");
+		
+		//Prepare + invoke instance controller
 		$this->prepare_controller();
 		$this->invoke_controller();
 	}
@@ -25,7 +36,9 @@ class baseApp
 		//ignore index.php from params
 		if($url == "index.php")
 		{
-			$url = "Page/index";
+			$this->controller = "Page";
+			$url = "";
+			return;
 		}
 		
 		//Split up url to array
@@ -41,11 +54,16 @@ class baseApp
 	
 	protected function prepare_controller()
 	{
-		//Require base controller and controller for this instance
-		require_once 'application/Controller.class.php';
+		//Require controller for this instance
 		require_once('application/controllers/' . $this->controller . '.class.php');
-		$this->controller = new $this->controller;
 		
+		//Did this actually give us our class?
+		if(class_exists($this->controller))
+			$this->controller = new $this->controller;
+		else
+			die("Controller '" . $this->controller . "' is corrupted");
+		
+		//Is there a second element?
 		if(isset($this->params[1]))
 		{
 			//Is second element in params telling us we want a method?
@@ -62,14 +80,15 @@ class baseApp
 		//Relisting params for passing into method
 		$this->params = $this->params ? array_values($this->params) : [];
 		
+		//Default method if none specified
+		if($this->method == "")
+			$this->method = "index";
+		
 		//All variables should have been valided at parse and prepare, invoke controller method.
 		if(method_exists($this->controller, $this->method))
 		{
 			call_user_func_array([$this->controller, $this->method], $this->params);
 		}
-		else
-		{
-			echo "404 - Page not fount";
-		}
+		else die($this->method . " does not exist in controller");
 	}
 }

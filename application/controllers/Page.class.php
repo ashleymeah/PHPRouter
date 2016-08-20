@@ -8,4 +8,9 @@ class Page extends Controller
 		$user->name = $name;		
 		$this->view('home/index', ['greeting' => $user->greeting(), 'greeting2' => 'hard coded !']);
 	}
+	
+	public function error_404()
+	{	
+		echo "404 not fount";
+	}
 }
